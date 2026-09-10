@@ -13,6 +13,26 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const formatAuthError = (err: any): string => {
+    if (!err || !err.response) {
+      return 'Unable to connect to the CarePulse server. Please verify network connectivity or that the backend is reachable.';
+    }
+    const status = err.response.status;
+    if (status === 401) {
+      return 'Invalid email or password.';
+    }
+    if (status === 403) {
+      return 'Your account does not have permission to access this area.';
+    }
+    if (status === 404) {
+      return 'Authentication service is unavailable.';
+    }
+    if (status >= 500) {
+      return 'Server error. Please try again.';
+    }
+    return err.response.data?.message || 'Authentication failed. Please try again.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -21,20 +41,25 @@ export const LoginPage: React.FC = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Invalid email or password.');
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDemoLogin = async (role: Role) => {
+    const cred = DEMO_CREDENTIALS[role];
+    if (cred) {
+      setEmail(cred.email);
+      setPassword(cred.pass);
+    }
     setLoading(true);
     setError(null);
     try {
       await switchDemoRole(role);
       navigate('/dashboard');
     } catch (err: any) {
-      setError('Unable to log in with demo account.');
+      setError(formatAuthError(err));
     } finally {
       setLoading(false);
     }

@@ -66,7 +66,8 @@ public class SecurityConfig {
                 "http://127.0.0.1:5173",
                 "http://localhost:3000",
                 "http://localhost:8080",
-                "http://localhost:5174"
+                "http://localhost:5174",
+                "https://care-curse.vercel.app"
         )) {
             if (!origins.contains(defaultOrigin)) {
                 origins.add(defaultOrigin);
@@ -95,7 +96,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/intelligence/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll()
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

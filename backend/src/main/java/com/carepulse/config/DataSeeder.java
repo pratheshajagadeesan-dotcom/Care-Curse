@@ -74,7 +74,8 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (userRepository.count() > 0) {
-            log.info("Database already seeded with initial data.");
+            log.info("Database already contains data. Verifying demo users and shifts...");
+            ensureDemoUsersExist();
             ensureThreeShiftsExist();
             return;
         }
@@ -380,6 +381,64 @@ public class DataSeeder implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.warn("Could not normalize shifts: {}", e.getMessage());
+        }
+    }
+
+    private void ensureDemoUsersExist() {
+        try {
+            ensureSingleDemoUser("Sarah Johnson", "family@carepulse.com", "password123", "+1 555-0101", Role.FAMILY_CAREGIVER);
+            ensureSingleDemoUser("David Miller, CNA", "professional@carepulse.com", "password123", "+1 555-0102", Role.PROFESSIONAL_CAREGIVER);
+            ensureSingleDemoUser("Elena Vance, RN", "coordinator@carepulse.com", "password123", "+1 555-0103", Role.CARE_COORDINATOR);
+            ensureSingleDemoUser("Dr. Robert Chen, MD", "clinical@carepulse.com", "password123", "+1 555-0104", Role.CLINICAL_STAFF);
+            log.info("All 4 demo users verified with valid BCrypt credentials.");
+        } catch (Exception e) {
+            log.warn("Error ensuring demo users: {}", e.getMessage());
+        }
+    }
+
+    private void ensureSingleDemoUser(String fullName, String email, String rawPassword, String phone, Role role) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            user = new User(fullName, email, passwordEncoder.encode(rawPassword), phone, role);
+            user.setActive(true);
+            user = userRepository.save(user);
+            log.info("Created missing demo user: {}", email);
+        } else {
+            boolean changed = false;
+            if (!user.isActive()) {
+                user.setActive(true);
+                changed = true;
+            }
+            if (user.getRole() != role) {
+                user.setRole(role);
+                changed = true;
+            }
+            if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+                user.setPassword(passwordEncoder.encode(rawPassword));
+                changed = true;
+                log.info("Repaired BCrypt password hash for demo user: {}", email);
+            }
+            if (changed) {
+                userRepository.save(user);
+            }
+        }
+
+        if (role == Role.FAMILY_CAREGIVER || role == Role.PROFESSIONAL_CAREGIVER) {
+            if (!caregiverProfileRepository.findByUserId(user.getId()).isPresent()) {
+                CaregiverProfile profile = new CaregiverProfile(user);
+                if (role == Role.FAMILY_CAREGIVER) {
+                    profile.setTotalCareHours(42);
+                    profile.setConsecutiveCareDays(6);
+                    profile.setCurrentBurnoutScore(58);
+                    profile.setCurrentBurnoutLevel("MODERATE");
+                } else {
+                    profile.setTotalCareHours(38);
+                    profile.setWeeklyShifts(5);
+                    profile.setCurrentBurnoutScore(28);
+                    profile.setCurrentBurnoutLevel("LOW");
+                }
+                caregiverProfileRepository.save(profile);
+            }
         }
     }
 }
