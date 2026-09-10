@@ -24,6 +24,9 @@ public class SpaRoutingConfig implements WebMvcConfigurer {
                         if (requestedResource.exists() && requestedResource.isReadable()) {
                             return requestedResource;
                         }
+                        if (resourcePath.startsWith("api/") || resourcePath.equals("api") || resourcePath.startsWith("v3/") || resourcePath.startsWith("swagger-ui")) {
+                            return null;
+                        }
                         Resource index = new ClassPathResource("/static/index.html");
                         return (index.exists() && index.isReadable()) ? index : null;
                     }

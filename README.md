@@ -102,13 +102,29 @@ The frontend starts on `http://localhost:5173`.
 
 ---
 
-## 🧪 Verified End-to-End Demo Flow
+## 🚀 Production Deployment (Vercel & Supabase)
 
-1. Open `http://localhost:5173` and log in as `family@carepulse.com` (Family Caregiver).
-2. Click **Record Observation**.
-3. Select **Mary Johnson**. Speak or click the scenario: *"Mom refused breakfast twice today and seemed more confused than usual."*
-4. AI extracts: **Appetite: Poor**, **Cognition: Increased Confusion**, **Severity: Moderate**.
-5. Confirm observation: Observation logs to timeline, Mary's status cards update, caregiver strain score increases, and emerging pattern alerts trigger.
-6. Switch role to **Professional Caregiver**: View shift watch item, click **Generate Shift Handover**, and review the synthesized report.
-7. Switch role to **Care Coordinator**: Review high caregiver strain in the monitoring table and reassign an overdue task.
-8. Switch role to **Clinical Staff**: Review 72-hour clinical trends with verified safety disclaimers.
+### Database: Supabase PostgreSQL
+1. Create a project on [Supabase](https://supabase.com).
+2. Go to **Project Settings** → **Database** → **Connection String** → **Session Pooler (Port 5432)**.
+3. Configure your backend environment variables:
+   ```env
+   SUPABASE_DB_URL=jdbc:postgresql://<db-host>:5432/<db-name>?sslmode=require
+   SUPABASE_DB_USERNAME=postgres.<project-ref>
+   SUPABASE_DB_PASSWORD=<your-supabase-db-password>
+   ```
+
+### Backend Deployment (Container / Cloud)
+- Multi-stage Dockerfile provided: `Dockerfile.vercel`.
+- Listens dynamically on `${PORT:8080}` and binds to `0.0.0.0`.
+- Health endpoint: `GET /api/health` returns `{"status": "UP", "database": "UP"}`.
+- Configure `CORS_ALLOWED_ORIGINS=https://care-curse.vercel.app`.
+
+### Frontend Deployment (Vercel)
+1. Import repository into Vercel.
+2. In Project Settings → **Environment Variables**, set:
+   ```env
+   VITE_API_BASE_URL=https://<your-deployed-backend-url>/api
+   ```
+3. Deploy! Vite will bundle the API client pointing to your live backend, with automatic fallback to `/api` (same origin) when deployed.
+4. `vercel.json` provides SPA routing rewrites so direct navigation to `/dashboard`, `/patients`, etc. never returns 404.
