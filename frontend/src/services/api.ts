@@ -11,11 +11,11 @@ const getApiBaseUrl = (): string => {
   if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
     return envUrl.trim();
   }
-  // In production browser environments (not localhost or 127.0.0.1), use relative /api
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return '/api';
+  if (import.meta.env.DEV) {
+    return 'http://localhost:8080/api';
   }
-  return 'http://localhost:8080/api';
+  // Production mode: never fall back to localhost
+  return '/api';
 };
 
 const api = axios.create({

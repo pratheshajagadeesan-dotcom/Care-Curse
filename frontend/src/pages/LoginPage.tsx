@@ -14,8 +14,11 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const formatAuthError = (err: any): string => {
+    if (!import.meta.env.VITE_API_BASE_URL && import.meta.env.PROD) {
+      return 'Production backend URL is not configured. Please set VITE_API_BASE_URL in your Vercel project settings.';
+    }
     if (!err || !err.response) {
-      return 'Unable to connect to the CarePulse server. Please verify network connectivity or that the backend is reachable.';
+      return 'Unable to connect to the CarePulse server. Please verify the backend service is running and reachable.';
     }
     const status = err.response.status;
     if (status === 401) {
