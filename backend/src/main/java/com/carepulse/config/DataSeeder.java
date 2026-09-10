@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -74,6 +75,7 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         if (userRepository.count() > 0) {
             log.info("Database already seeded with initial data.");
+            ensureThreeShiftsExist();
             return;
         }
 
@@ -357,5 +359,27 @@ public class DataSeeder implements CommandLineRunner {
         alertRepository.saveAll(Arrays.asList(a1, a2));
 
         log.info("CarePulse AI demo seed data successfully populated.");
+    }
+
+    private void ensureThreeShiftsExist() {
+        try {
+            List<Shift> existingShifts = shiftRepository.findAll();
+            boolean hasDay = existingShifts.stream().anyMatch(s -> "DAY".equalsIgnoreCase(s.getShiftType()));
+            long morningCount = existingShifts.stream().filter(s -> "MORNING".equalsIgnoreCase(s.getShiftType())).count();
+            if (hasDay || morningCount != 1 || existingShifts.size() != 3) {
+                log.info("Normalizing shift records to exactly 3 shifts...");
+                shiftRepository.deleteAll();
+                User profUser = userRepository.findByEmail("professional@carepulse.com").orElse(null);
+                if (profUser != null) {
+                    Shift morningShift = new Shift(profUser, "MORNING", "04:00 - 12:00", LocalDateTime.now().minusHours(4), LocalDateTime.now().plusHours(4), "ACTIVE");
+                    Shift afternoonShift = new Shift(profUser, "AFTERNOON", "12:00 - 20:00", LocalDateTime.now().plusHours(4), LocalDateTime.now().plusHours(12), "UPCOMING");
+                    Shift nightShift = new Shift(profUser, "NIGHT", "20:00 - 04:00", LocalDateTime.now().plusHours(12), LocalDateTime.now().plusHours(20), "UPCOMING");
+                    shiftRepository.saveAll(Arrays.asList(morningShift, afternoonShift, nightShift));
+                    log.info("Shift normalization complete: exactly 3 shifts active in database.");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not normalize shifts: {}", e.getMessage());
+        }
     }
 }
