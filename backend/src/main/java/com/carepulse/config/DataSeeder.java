@@ -268,8 +268,10 @@ public class DataSeeder implements CommandLineRunner {
         careTaskRepository.saveAll(Arrays.asList(t1, t2, t3, t4));
 
         // 6. Seed Shifts
-        Shift dayShift = new Shift(profUser, "MORNING", "04:00 - 12:00", LocalDateTime.now().minusHours(4), LocalDateTime.now().plusHours(4), "ACTIVE");
-        shiftRepository.save(dayShift);
+        Shift morningShift = new Shift(profUser, "MORNING", "04:00 - 12:00", LocalDateTime.now().minusHours(4), LocalDateTime.now().plusHours(4), "ACTIVE");
+        Shift afternoonShift = new Shift(profUser, "AFTERNOON", "12:00 - 20:00", LocalDateTime.now().plusHours(4), LocalDateTime.now().plusHours(12), "UPCOMING");
+        Shift nightShift = new Shift(profUser, "NIGHT", "20:00 - 04:00", LocalDateTime.now().plusHours(12), LocalDateTime.now().plusHours(20), "UPCOMING");
+        shiftRepository.saveAll(Arrays.asList(morningShift, afternoonShift, nightShift));
 
         // 7. Seed Handover
         Handover h1 = new Handover();
